@@ -7,6 +7,8 @@ using CefSharp.Handler;
 
 using GetWebResources.Utils;
 
+using Serilog;
+
 namespace GetWebResources.Handle
 {
     public class MyRequestHandle : RequestHandler
@@ -15,6 +17,7 @@ namespace GetWebResources.Handle
         // 浏览之前触发.
         protected override bool OnBeforeBrowse(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request, bool userGesture, bool isRedirect)
         {
+            Log.Information("请求的地址: " + request.Url);
             return base.OnBeforeBrowse(chromiumWebBrowser, browser, frame, request, userGesture, isRedirect);
         }
 

@@ -27,6 +27,8 @@ using GetWebResources.Handle;
 using GetWebResources.Model;
 using GetWebResources.Utils;
 
+using Serilog;
+
 namespace GetWebResources
 {
     public partial class MainWindow : Window
@@ -37,6 +39,8 @@ namespace GetWebResources
 
             // 重写 浏览器请求处理程序
             Web.RequestHandler = new MyRequestHandle();
+
+            LogUtils.InitLog();
 
             // 显示console
             ConsoleUtils.Show();
@@ -59,43 +63,44 @@ namespace GetWebResources
 
         private void BtnGetResources_Click(object sender, RoutedEventArgs e)
         {
-
             var title = Web?.Title ?? "";
-            
-
             Task.Run(() =>
             {
-                SetTip("⏱️ 正在获取资源,请稍等..");
-                if (string.IsNullOrEmpty(title))
-                {
-                    title = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff");
+                try
+                {                    
+                    MessageBox.Show("⏱️ 开始获取资源,请稍等...");
+                    SetTip("⏱️ 正在获取资源,请稍等..");
+
+                    if (string.IsNullOrEmpty(title))
+                    {
+                        title = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff");
+                    }
+                    else if (title.Length > 10)
+                    {
+                        title = title.Substring(0, 10);
+                    }
+
+                    SaveResourcesUtils.ProjectName = title;
+
+                    // 保存所有资源
+                    var path = SaveResourcesUtils.SaveAllResources();
+
+                    if (Directory.Exists(path))
+                    {
+                        // 如果成功,则用 资源管理器 打开文件夹
+                        SaveResourcesUtils.OpenFolderPath(path);
+                    }
+
+                    SetTip("✔️ 获取资源完成..");
+                    MessageBox.Show("✔️ 获取资源完成..");
                 }
-
-                if (title.Length > 10)
+                catch (Exception ex)
                 {
-                    title = title.Substring(0, 10);
+                    Log.Error(ex, "获取资源异常:");
+                    SetTip("发生异常,请到Logs目录中查看详细信息");
                 }
-
-                // 初始化 必要参数
-                SaveResourcesUtils.BasePath = @"E:\Desktop\img4399_new";
-                SaveResourcesUtils.ProjectName = title;
-
-                // 保存所有资源
-                var path = SaveResourcesUtils.SaveAllResources();
-
-                
-                if (Directory.Exists(path))
-                {
-                    // 如果成功,则用 资源管理器 打开文件夹
-                    var process = new Process();
-                    process.StartInfo.FileName = path;
-                    process.StartInfo.UseShellExecute = true;
-                    process.Start();
-                }
-
-                SetTip("✔️ 获取资源完成..");
-                MessageBox.Show("✔️ 获取资源完成..");
             });
+
         }
 
         private void SetTip(string data)
@@ -119,6 +124,13 @@ namespace GetWebResources
         private void CheckBoxOpenHostFilter_Unchecked(object sender, RoutedEventArgs e)
         {
             SaveResourcesUtils.OpenHostFilterState = false;
+        }
+
+        private void BtnOpenConfig_Click(object sender, RoutedEventArgs e)
+        {
+
+            SaveResourcesUtils.OpenConfigPath();
+
         }
     }
 }

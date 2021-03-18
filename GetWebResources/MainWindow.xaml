@@ -5,32 +5,44 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GetWebResources"
         xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
+        
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Normal"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        
         mc:Ignorable="d"
-        Title="MainWindow" Width="1600" Height="672" >
+        Title="一键获取Web资源" Width="968" Height="672"  
+         >
     <Grid>
 
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="50"></RowDefinition>
                 <RowDefinition></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="40"></RowDefinition>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" BorderBrush="Red" BorderThickness="0,0,0,1" Margin="0,0" Background="White" >
                 <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,5" >
                     <CheckBox Margin="0,0,0,0" Name="CheckBoxOpenHostFilter" Content="打开Host筛选" VerticalAlignment="Center" Checked="CheckBoxOpenHostFilter_Checked" Unchecked="CheckBoxOpenHostFilter_Unchecked" ></CheckBox>
-                    <TextBox Margin="10,0,0,0"  Name="TextBoxWebUrl" Text="" Width="600" VerticalAlignment="Center"  ></TextBox>
+                    <TextBox Margin="10,0,0,0"  Name="TextBoxWebUrl" Text="" Width="300" VerticalAlignment="Center"  ></TextBox>
                     <Button Margin="10,0,0,0" Name="BtnLoad" Content="加载" Click="BtnLoad_Click" ></Button>
                     <Button Margin="10,0,0,0" Name="BtnAppend" Content="获取资源"  Click="BtnGetResources_Click" ></Button>
-                    <Label Margin="10,0,0,0"   Content="资源数: " ></Label>
-                    <Label Margin="0,0,0,0"  Name="LableResourcesCount" Content="0"></Label>
+                    <Label Margin="10,0,0,0"   Content="资源数: " VerticalAlignment="Center" ></Label>
+                    <Label Margin="0,0,0,0"  Name="LableResourcesCount" Content="0" VerticalAlignment="Center"></Label>
+                    <Button Margin="10,0,0,0" Name="BtnOpenConfig" Content="打开设置目录"  Click="BtnOpenConfig_Click" ></Button>
                     <Button Margin="10,0,0,0" Name="BtnCheckCore" Content="浏览器内核检测"  Click="BtnCheckCore_Click" ></Button>
                 </StackPanel>
             </Border>
             <cefSharp:ChromiumWebBrowser  Grid.Row="1" x:Name="Web" Margin="0,5,0,5" />
 
             <Border Grid.Row="2" BorderBrush="Red" BorderThickness="0,1,1,0" Background="White" Width="auto" HorizontalAlignment="Left">
-                <Label Name="LableTip" Content="😀 加载对应的地址,加载完成后,点击获取资源.."> 
+                <Label Name="LableTip" FontSize="20"   Content="😀 加载对应的地址,加载完成后,点击获取资源.." Foreground="#FFFF0404">
                 </Label>
             </Border>
         </Grid>
