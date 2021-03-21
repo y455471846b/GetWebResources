@@ -64,7 +64,7 @@ namespace GetWebResources
         private void BtnGetResources_Click(object sender, RoutedEventArgs e)
         {
             var title = Web?.Title ?? "";
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 try
                 {                    
@@ -83,7 +83,7 @@ namespace GetWebResources
                     SaveResourcesUtils.ProjectName = title;
 
                     // 保存所有资源
-                    var path = SaveResourcesUtils.SaveAllResources();
+                    var path = await SaveResourcesUtils.SaveAllResourcesAsync();
 
                     if (Directory.Exists(path))
                     {

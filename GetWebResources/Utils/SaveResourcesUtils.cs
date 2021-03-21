@@ -32,6 +32,7 @@ namespace GetWebResources.Utils
         public static string ConfigFileName { get; set; } = "settings.json";
         public static string ConfigFilePath { get; set; } = Path.Combine(ConfigFileFolderPath, ConfigFileName);
 
+        private static HttpClient _httpClient = new HttpClient();
         /// <summary>
         /// 初始化相关配置
         /// </summary>
@@ -77,6 +78,10 @@ namespace GetWebResources.Utils
             // 域名
             var host = new Uri(url).Host;
 
+            if (string.IsNullOrEmpty(host))
+            {
+                return null;
+            }
             // 筛选域名 (不在列表中,不进行下载)
             if (OpenHostFilterState)
             {
@@ -110,7 +115,7 @@ namespace GetWebResources.Utils
                 return result;
             }
 
-            var fileByteArray = await new HttpClient().GetByteArrayAsync(resourcesInfo.Url);
+            var fileByteArray = await _httpClient.GetByteArrayAsync(resourcesInfo.Url);
 
             var baseFolderPath = Path.Combine(BasePath, ProjectName, resourcesInfo.Host);
 
@@ -126,7 +131,7 @@ namespace GetWebResources.Utils
                 Directory.CreateDirectory(baseFolderPath);
             }
             // 写入文件
-            var fullPath = Path.Combine(baseFolderPath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff"), resourcesInfo.Ext);
+            var fullPath = Path.Combine(baseFolderPath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff") + resourcesInfo.Ext);
             File.WriteAllBytes(fullPath, fileByteArray);
 
             result = File.Exists(fullPath);
@@ -138,15 +143,15 @@ namespace GetWebResources.Utils
         /// 保存所有资源
         /// </summary>
         /// <returns>本地存放的目录</returns>
-        public static string SaveAllResources()
+        public static async Task<string> SaveAllResourcesAsync()
         {
             Log.Information("开始获取资源: " + SaveResourcesUtils.ProjectName);
-            
+
             InitConfig();
 
             foreach (var urlItem in ResourcesUrlList)
             {
-                _ = SaveResourcesByUrl(urlItem);
+                await SaveResourcesByUrl(urlItem);
             }
 
             var savedFolderPath = Path.Combine(BasePath, ProjectName);
