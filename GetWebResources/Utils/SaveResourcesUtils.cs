@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 using GetWebResources.Model;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 using Serilog;
 
@@ -18,6 +18,7 @@ namespace GetWebResources.Utils
 {
     public class SaveResourcesUtils
     {
+        public static string ClassName = nameof(SaveResourcesUtils);
         public static List<string> ResourcesUrlList { get; set; } = new List<string>();
 
         public static List<string> ContainsHostList { get; set; } = new List<string>();
@@ -28,17 +29,22 @@ namespace GetWebResources.Utils
 
         public static bool OpenHostFilterState { get; set; } = false;
 
-        public static string ConfigFileFolderPath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
-        public static string ConfigFileName { get; set; } = "settings.json";
-        public static string ConfigFilePath { get; set; } = Path.Combine(ConfigFileFolderPath, ConfigFileName);
+        private static string _configFileFolderPath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
+        private static string _configFileName { get; set; } = "settings.json";
+        private static string _configFilePath { get; set; } = Path.Combine(_configFileFolderPath, _configFileName);
 
-        private static HttpClient _httpClient = new HttpClient();
+        private static HttpClient _httpClient { get; set; } = new HttpClient();
+
+        public static ObservableCollection<string> HistoryList { get; set; } = new ObservableCollection<string>();
+        private static string _historyListConfigPath = Path.Combine(_configFileFolderPath, "history.json");
+
+        public static List<string> ExcludeKeyWordList { get; set; } = new List<string>() { };
         /// <summary>
         /// 初始化相关配置
         /// </summary>
         public static void InitConfig()
         {
-            var settingStr = File.ReadAllText(ConfigFilePath);
+            var settingStr = File.ReadAllText(_configFilePath);
             var settingJson = JsonConvert.DeserializeObject<ConfigModel>(settingStr);
 
             if (!string.IsNullOrEmpty(settingJson.BasePath))
@@ -47,11 +53,53 @@ namespace GetWebResources.Utils
             }
 
             ContainsHostList = settingJson.ContainsHostList;
+            ExcludeKeyWordList = settingJson.ExcludeKeyWordList;
+        }
+
+        public static void SaveHistoryData()
+        {
+
+            var jsonData = JsonConvert.SerializeObject(HistoryList);
+            File.WriteAllText(_historyListConfigPath, jsonData);
+        }
+
+
+        public static Action OnHistoryListChanged;
+
+        public static void PushToHistoryList(string data)
+        {
+            if (!HistoryList.Contains(data))
+            {
+                HistoryList.Remove(data);
+            }
+
+            // 超过最大限制则移除最后一个.
+            var maxCount = 10;
+            if (HistoryList.Count > maxCount)
+            {
+                HistoryList.RemoveAt(HistoryList.Count - 1);
+            }
+
+            HistoryList.Insert(0, data);
+
+            SaveHistoryData();
+            // 调用委托
+            OnHistoryListChanged?.Invoke();
+        }
+
+        public static void InitHistoryList()
+        {
+            if (File.Exists(_historyListConfigPath))
+            {
+                var historyStr = File.ReadAllText(_historyListConfigPath);
+                HistoryList = JsonConvert.DeserializeObject<ObservableCollection<string>>(historyStr);
+            }
+
         }
 
         public static void OpenConfigPath()
         {
-            OpenFolderPath(ConfigFileFolderPath);
+            OpenFolderPath(_configFileFolderPath);
         }
 
         /// <summary>
@@ -108,34 +156,92 @@ namespace GetWebResources.Utils
         {
             var result = false;
 
-            var resourcesInfo = filterResources(url);
-            // 不符合条件则 返回false
-            if (resourcesInfo == null)
+            try
             {
+                var resourcesInfo = filterResources(url);
+                // 不符合条件则 返回false
+                if (resourcesInfo == null)
+                {
+                    return result;
+                }
+
+                //  System.Net.Http.HttpRequestException:
+                //  Response status code does not indicate success:
+                //  404 (Not Found).
+
+
+                var fileByteArray = await _httpClient.GetByteArrayAsync(resourcesInfo.Url);
+
+                var baseFolderPath = Path.Combine(BasePath, ProjectName, resourcesInfo.Host);
+
+                // 判断 扩展名 非空
+                if (!string.IsNullOrEmpty(resourcesInfo.Ext))
+                {
+                    //.js?3330fa9d0a26e10429592adcd844d18a
+                    //.html&1
+                    //.html#33
+
+                    // 处理 异形的扩展名
+                    string ext;
+                    foreach (var item in ExcludeKeyWordList)
+                    {
+                        if (!CheckExt(resourcesInfo.Ext, item, out ext))
+                        {
+                            resourcesInfo.Ext = ext;
+                        }
+                    }
+
+                    baseFolderPath = Path.Combine(baseFolderPath, resourcesInfo.Ext.Replace(".", ""));
+                }
+
+
+                // 创建文件夹
+                if (!Directory.Exists(baseFolderPath))
+                {
+                    // 'E:\Work\CSharpProject\GetWebResources\GetWebResources\bin\Debug\net5.0-windows\out\
+                    // 萌萌动物连连看,36\hm.baidu.com\js?3330fa9d0a26e10429592adcd844d18a'
+                    Directory.CreateDirectory(baseFolderPath);
+                }
+
+                var fullPath = Path.Combine(baseFolderPath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff") + resourcesInfo.Ext);
+
+                try
+                {
+                    // 写入文件
+                    File.WriteAllBytes(fullPath, fileByteArray);
+                }
+                catch (Exception ex)
+                {
+                    var errorName = $"{ClassName}.{nameof(SaveResourcesByUrl)} WriteAllBytes 写入文件异常 ";
+                    Log.Error(ex, errorName);
+                    ConsoleUtils.WriteLine(errorName + ex);
+                }
+
+                result = File.Exists(fullPath);
+
                 return result;
             }
-
-            var fileByteArray = await _httpClient.GetByteArrayAsync(resourcesInfo.Url);
-
-            var baseFolderPath = Path.Combine(BasePath, ProjectName, resourcesInfo.Host);
-
-            // 判断 扩展名 非空
-            if (!string.IsNullOrEmpty(resourcesInfo.Ext))
+            catch (Exception ex)
             {
-                baseFolderPath = Path.Combine(baseFolderPath, resourcesInfo.Ext.Replace(".", ""));
-            }
+                var errorName = $"{ClassName}.{nameof(SaveResourcesByUrl)} 异常: ";
+                Log.Error(ex, errorName);
+                ConsoleUtils.WriteLine(errorName + ex);
 
-            // 创建文件夹
-            if (!Directory.Exists(baseFolderPath))
+                return result;
+            }
+        }
+
+        public static bool CheckExt(string Ext, string keyWord, out string oExt)
+        {
+            var result = true;
+
+            var index = Ext.IndexOf(keyWord);
+            if (index > 0)
             {
-                Directory.CreateDirectory(baseFolderPath);
+                result = false;
+                Ext = Ext.Substring(0, index);
             }
-            // 写入文件
-            var fullPath = Path.Combine(baseFolderPath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff") + resourcesInfo.Ext);
-            File.WriteAllBytes(fullPath, fileByteArray);
-
-            result = File.Exists(fullPath);
-
+            oExt = Ext;
             return result;
         }
 
@@ -160,25 +266,17 @@ namespace GetWebResources.Utils
             return savedFolderPath;
         }
 
-        private static Action<int> _onResourcesListCountChange;
-        public static void ListenResourcesListCountChange(Action<int> OnResourcesListCountChange)
-        {
-            _onResourcesListCountChange = OnResourcesListCountChange;
-        }
-
+        public static Action<int> OnResourcesListCountChanged;
         /// <summary>
         /// 向 ResourcesList 推送数据
         /// </summary>
         /// <param name="urlStr"></param>
         public static void PutUrlToResourcesList(string urlStr)
         {
-            if (_onResourcesListCountChange != null)
-            {
-                // 触发 委托
-                _onResourcesListCountChange(ResourcesUrlList.Count);
-            }
 
             ResourcesUrlList.Add(urlStr);
+            // 调用 委托
+            OnResourcesListCountChanged?.Invoke(ResourcesUrlList.Count);
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -36,6 +37,7 @@ namespace GetWebResources
         public MainWindow()
         {
             InitializeComponent();
+                      
 
             // 重写 浏览器请求处理程序
             Web.RequestHandler = new MyRequestHandle();
@@ -44,30 +46,81 @@ namespace GetWebResources
 
             // 显示console
             ConsoleUtils.Show();
+            InitEnableOfButton();
+            InitEvent();
 
-            SaveResourcesUtils.ListenResourcesListCountChange((num) =>
+            InitDataSource();
+        }
+
+        private void InitEnableOfButton()
+        {
+
+        }
+        private void InitDataSource() 
+        {
+            SaveResourcesUtils.InitHistoryList();
+            ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
+        }
+
+
+        private void InitEvent()
+        {
+            // 地址改变事件
+            Web.AddressChanged += Web_AddressChanged;
+
+            ComboBoxHistory.SelectionChanged += ComboBoxHistory_SelectionChanged;           
+           
+            // 资源List 数量改变回调
+            SaveResourcesUtils.OnResourcesListCountChanged += (int num) =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     LableResourcesCount.Content = num;
                 });
-            });
+            };
+
+            SaveResourcesUtils.OnHistoryListChanged += () =>
+            {
+                ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
+            };
+        }
+
+        private void ComboBoxHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            Web.Address = ComboBoxHistory.SelectedValue.ToString();
+        }
+
+        private void Web_AddressChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            TextBoxWebUrl.Text = Web.Address;
         }
 
         private void BtnLoad_Click(object sender, RoutedEventArgs e)
         {
+              
             SaveResourcesUtils.ClearResourcesList();
             var url = TextBoxWebUrl.Text;
-            Web.Address = url;
+
+            if (Web.Address == url)
+            {
+                Web.Reload();
+            }
+            else
+            {
+                Web.Address = url;
+                SaveResourcesUtils.PushToHistoryList(url);
+            }
+
         }
 
         private void BtnGetResources_Click(object sender, RoutedEventArgs e)
         {
             var title = Web?.Title ?? "";
             Task.Run(async () =>
-            {
+            {                 
                 try
-                {                    
+                {
                     MessageBox.Show("⏱️ 开始获取资源,请稍等...");
                     SetTip("⏱️ 正在获取资源,请稍等..");
 
@@ -98,6 +151,7 @@ namespace GetWebResources
                 {
                     Log.Error(ex, "获取资源异常:");
                     SetTip("发生异常,请到Logs目录中查看详细信息");
+                    ConsoleUtils.WriteLine("获取资源异常: " + ex);
                 }
             });
 
@@ -128,9 +182,9 @@ namespace GetWebResources
 
         private void BtnOpenConfig_Click(object sender, RoutedEventArgs e)
         {
-
             SaveResourcesUtils.OpenConfigPath();
-
         }
+
+
     }
 }

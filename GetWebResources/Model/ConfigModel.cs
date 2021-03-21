@@ -8,6 +8,11 @@ namespace GetWebResources.Model
     {
         [JsonProperty("SavedPath")]
         public string BasePath { get; set; }
+
+        [JsonProperty("ExcludeKeywordsfromExtensions")]
+        public List<string> ExcludeKeyWordList { get; set; }
+
+        [JsonProperty("ContainsHostList")]
         public List<string> ContainsHostList { get; set; }
 
     }

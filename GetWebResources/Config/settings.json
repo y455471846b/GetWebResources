@@ -1,6 +1,12 @@
 {
   "SavedPath": "",
+  "ExcludeKeywordsfromExtensions": [
+    "?",
+    "&",
+    "#"
+  ],
   "ContainsHostList": [
-    "sda.4399.com"
+    "sda.4399.com",
+    "flash.7k7k.com"
   ]
 }
