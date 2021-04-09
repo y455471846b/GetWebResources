@@ -20,6 +20,7 @@ namespace GetWebResources.Utils
     {
         public static string ClassName = nameof(SaveResourcesUtils);
         public static List<string> ResourcesUrlList { get; set; } = new List<string>();
+        public static List<string> ResourcesUrlBackList { get; set; } = new List<string>();
 
         public static List<string> ContainsHostList { get; set; } = new List<string>();
 
@@ -255,7 +256,10 @@ namespace GetWebResources.Utils
 
             InitConfig();
 
-            foreach (var urlItem in ResourcesUrlList)
+            ResourcesUrlBackList.Clear();
+            ResourcesUrlBackList.AddRange(ResourcesUrlList);
+
+            foreach (var urlItem in ResourcesUrlBackList)
             {
                 await SaveResourcesByUrl(urlItem);
             }

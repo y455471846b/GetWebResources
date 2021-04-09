@@ -37,7 +37,7 @@ namespace GetWebResources
         public MainWindow()
         {
             InitializeComponent();
-                      
+
 
             // 重写 浏览器请求处理程序
             Web.RequestHandler = new MyRequestHandle();
@@ -56,7 +56,7 @@ namespace GetWebResources
         {
 
         }
-        private void InitDataSource() 
+        private void InitDataSource()
         {
             SaveResourcesUtils.InitHistoryList();
             ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
@@ -68,8 +68,8 @@ namespace GetWebResources
             // 地址改变事件
             Web.AddressChanged += Web_AddressChanged;
 
-            ComboBoxHistory.SelectionChanged += ComboBoxHistory_SelectionChanged;           
-           
+            ComboBoxHistory.SelectionChanged += ComboBoxHistory_SelectionChanged;
+
             // 资源List 数量改变回调
             SaveResourcesUtils.OnResourcesListCountChanged += (int num) =>
             {
@@ -98,7 +98,7 @@ namespace GetWebResources
 
         private void BtnLoad_Click(object sender, RoutedEventArgs e)
         {
-              
+
             SaveResourcesUtils.ClearResourcesList();
             var url = TextBoxWebUrl.Text;
 
@@ -118,7 +118,7 @@ namespace GetWebResources
         {
             var title = Web?.Title ?? "";
             Task.Run(async () =>
-            {                 
+            {
                 try
                 {
                     MessageBox.Show("⏱️ 开始获取资源,请稍等...");
@@ -152,6 +152,10 @@ namespace GetWebResources
                     Log.Error(ex, "获取资源异常:");
                     SetTip("发生异常,请到Logs目录中查看详细信息");
                     ConsoleUtils.WriteLine("获取资源异常: " + ex);
+
+                    //打开log目录
+                    var basePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+                    SaveResourcesUtils.OpenFolderPath(basePath);
                 }
             });
 
