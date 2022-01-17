@@ -6,31 +6,42 @@
 
 ## 功能
 
-> 按照 域名 与 资源类型  分类文件夹. 
->
-> 可以设置多个域名筛选, 仅获取对应域名里的资源
->
-> 资源默认保存在 out 目录中
+- 按照 域名 与 资源类型  分类文件夹. 
+
+- 可以设置多个域名筛选, 仅获取对应域名里的资源
+
+- 资源默认保存在 out 目录中
+
+
+
+## 小技巧
+全局安装  `npm i -g prettier` 
+
+在目录中执行 `prettier --write .` (最后有个点)
+
+可以自动递归子文件夹,格式化所有的前端代码文件
+
+
 
 ## 环境
 
-> Windows 10 企业版 版本号 1909
+> Windows 11
 >
-> Microsoft Visual Studio 2019 版本 16.9.1
+> Microsoft Visual Studio 2022
 >
 > WPF
 >
-> .net 5.0.4
+> .Net 6
 
 
 
 ## 截图
 
-![image-20210318212709155](img.assets/image-20210318212709155.png)
+![界面](img.assets/image-20210318212709155.png)
 
-![image-20210316224731486](img.assets/image-20210316224731486.png)
+![成品文件夹](img.assets/showfile.png)
 
-![image-20210316224746231](img.assets/image-20210316224746231.png)
+
 
 
 
@@ -38,6 +49,5 @@
 
 > 如果这个开源项目 可以帮助到你,  你也可以请作者喝一杯咖啡。
 
-![wxPay](img.assets/wxPay.png)
+![pay](img.assets/pay.png)
 
-![aliPay](img.assets/aliPay.png)

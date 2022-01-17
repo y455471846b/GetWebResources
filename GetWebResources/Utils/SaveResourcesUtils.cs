@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Windows.Markup;
+using System.Windows.Threading;
 
 using GetWebResources.Model;
 
@@ -141,9 +143,24 @@ namespace GetWebResources.Utils
                 }
             }
 
-            // 文件扩展名
-            var fileExt = new FileInfo(url).Extension;
-            result = new ResourcesModel() { Url = url, Ext = fileExt, Host = host };
+            var fileInfo = new FileInfo(url);
+
+            var fileExt = fileInfo.Extension;
+
+            FilterExt(ref fileExt);
+
+            var fileName = fileInfo.Name;
+
+            FilterExt(ref fileName);
+
+
+            result = new ResourcesModel()
+            {
+                Url = url,
+                Ext = fileExt,
+                Host = host,
+                Name = fileName
+            };
 
             return result;
         }
@@ -173,27 +190,12 @@ namespace GetWebResources.Utils
 
                 var fileByteArray = await _httpClient.GetByteArrayAsync(resourcesInfo.Url);
 
-                var baseFolderPath = Path.Combine(BasePath, ProjectName, resourcesInfo.Host);
-
-                // 判断 扩展名 非空
-                if (!string.IsNullOrEmpty(resourcesInfo.Ext))
-                {
-                    //.js?3330fa9d0a26e10429592adcd844d18a
-                    //.html&1
-                    //.html#33
-
-                    // 处理 异形的扩展名
-                    string ext;
-                    foreach (var item in ExcludeKeyWordList)
-                    {
-                        if (!CheckExt(resourcesInfo.Ext, item, out ext))
-                        {
-                            resourcesInfo.Ext = ext;
-                        }
-                    }
-
-                    baseFolderPath = Path.Combine(baseFolderPath, resourcesInfo.Ext.Replace(".", ""));
-                }
+                var baseFolderPath = Path.Combine(
+                    BasePath,
+                    ProjectName,
+                    resourcesInfo.Host,
+                    resourcesInfo.Ext.Replace(".", "") // 使用 扩展名 创建一个文件夹
+                    );
 
 
                 // 创建文件夹
@@ -204,7 +206,15 @@ namespace GetWebResources.Utils
                     Directory.CreateDirectory(baseFolderPath);
                 }
 
-                var fullPath = Path.Combine(baseFolderPath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff") + resourcesInfo.Ext);
+
+                if (string.IsNullOrEmpty(resourcesInfo.Name))
+                {
+                    // 没有名字的,给一个默认的名字
+                    resourcesInfo.Name = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff");
+                }
+
+                // 拼接上 文件名
+                var fullPath = Path.Combine(baseFolderPath, resourcesInfo.Name);
 
                 try
                 {
@@ -232,17 +242,50 @@ namespace GetWebResources.Utils
             }
         }
 
-        public static bool CheckExt(string Ext, string keyWord, out string oExt)
+
+        /// <summary>
+        /// 去除扩展名 多余的部分, 返回一个正常的 名称
+        /// </summary>
+        /// <param name="name"></param>
+        public static void FilterExt(ref string name)
+        {
+            if (!string.IsNullOrEmpty(name))
+            {
+                //.js?3330fa9d0a26e10429592adcd844d18a
+                //.html&1
+                //.html#33
+
+                // abc.js?123412
+
+                // 处理 异形的扩展名
+                foreach (var item in ExcludeKeyWordList)
+                {
+                    if (!CheckExt(name, item, out string ext))
+                    {
+                        name = ext;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检查扩展名的格式,是否是正常的 (比如: .js .css   不正常的-> .js#123)
+        /// </summary>
+        /// <param name="extName">扩展名</param>
+        /// <param name="keyWord">要检查的特殊关键字</param>
+        /// <param name="oExt">如果不正常,则处理, 并通过 out 返回数据</param>
+        /// <returns>true 正常,  false 不正常</returns>
+        public static bool CheckExt(string extName, string keyWord, out string oExt)
         {
             var result = true;
 
-            var index = Ext.IndexOf(keyWord);
+            var index = extName.IndexOf(keyWord);
             if (index > 0)
             {
                 result = false;
-                Ext = Ext.Substring(0, index);
+                extName = extName.Substring(0, index);
             }
-            oExt = Ext;
+            oExt = extName;
             return result;
         }
 
@@ -261,7 +304,11 @@ namespace GetWebResources.Utils
 
             foreach (var urlItem in ResourcesUrlBackList)
             {
-                await SaveResourcesByUrl(urlItem);
+                var res = await SaveResourcesByUrl(urlItem);
+                if (res)
+                {
+                    GlobalUI.ShowTip("保存成功: " + urlItem);
+                }
             }
 
             var savedFolderPath = Path.Combine(BasePath, ProjectName);

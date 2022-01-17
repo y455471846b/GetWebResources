@@ -18,6 +18,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 using CefSharp;
 using CefSharp.DevTools.Network;
@@ -32,6 +33,23 @@ using Serilog;
 
 namespace GetWebResources
 {
+
+    public static class GlobalUI
+    {
+        public static ChromiumWebBrowser Web { get; set; }
+
+        public static Label LabelTip { get; set; }
+
+        public static Dispatcher Dispatcher { get; set; }
+
+        public static void ShowTip(string msg)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                LabelTip.Content = msg;
+            });
+        }
+    }
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -46,16 +64,15 @@ namespace GetWebResources
 
             // 显示console
             ConsoleUtils.Show();
-            InitEnableOfButton();
             InitEvent();
 
             InitDataSource();
+            GlobalUI.Web = Web;
+            GlobalUI.LabelTip = LabelTip;
+            GlobalUI.Dispatcher = Dispatcher;
         }
 
-        private void InitEnableOfButton()
-        {
 
-        }
         private void InitDataSource()
         {
             SaveResourcesUtils.InitHistoryList();
@@ -165,7 +182,7 @@ namespace GetWebResources
         {
             Dispatcher.Invoke(() =>
                {
-                   LableTip.Content = data;
+                   LabelTip.Content = data;
                });
         }
 
