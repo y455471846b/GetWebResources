@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace GetWebResources.Model
-{ 
+﻿namespace GetWebResources.Model
+{
     public class ResourcesModel
     {
         public string Url { get; set; }
@@ -13,6 +9,5 @@ namespace GetWebResources.Model
         public string Host { get; set; }
 
         public string Name { get; set; }
-
     }
 }

@@ -3,16 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Windows.Markup;
-using System.Windows.Threading;
 
 using GetWebResources.Model;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 using Serilog;
 
@@ -42,6 +38,7 @@ namespace GetWebResources.Utils
         private static string _historyListConfigPath = Path.Combine(_configFileFolderPath, "history.json");
 
         public static List<string> ExcludeKeyWordList { get; set; } = new List<string>() { };
+
         /// <summary>
         /// 初始化相关配置
         /// </summary>
@@ -61,11 +58,9 @@ namespace GetWebResources.Utils
 
         public static void SaveHistoryData()
         {
-
             var jsonData = JsonConvert.SerializeObject(HistoryList);
             File.WriteAllText(_historyListConfigPath, jsonData);
         }
-
 
         public static Action OnHistoryListChanged;
 
@@ -97,7 +92,6 @@ namespace GetWebResources.Utils
                 var historyStr = File.ReadAllText(_historyListConfigPath);
                 HistoryList = JsonConvert.DeserializeObject<ObservableCollection<string>>(historyStr);
             }
-
         }
 
         public static void OpenConfigPath()
@@ -153,7 +147,6 @@ namespace GetWebResources.Utils
 
             FilterExt(ref fileName);
 
-
             result = new ResourcesModel()
             {
                 Url = url,
@@ -187,7 +180,6 @@ namespace GetWebResources.Utils
                 //  Response status code does not indicate success:
                 //  404 (Not Found).
 
-
                 var fileByteArray = await _httpClient.GetByteArrayAsync(resourcesInfo.Url);
 
                 var baseFolderPath = Path.Combine(
@@ -197,7 +189,6 @@ namespace GetWebResources.Utils
                     resourcesInfo.Ext.Replace(".", "") // 使用 扩展名 创建一个文件夹
                     );
 
-
                 // 创建文件夹
                 if (!Directory.Exists(baseFolderPath))
                 {
@@ -205,7 +196,6 @@ namespace GetWebResources.Utils
                     // 萌萌动物连连看,36\hm.baidu.com\js?3330fa9d0a26e10429592adcd844d18a'
                     Directory.CreateDirectory(baseFolderPath);
                 }
-
 
                 if (string.IsNullOrEmpty(resourcesInfo.Name))
                 {
@@ -241,7 +231,6 @@ namespace GetWebResources.Utils
                 return result;
             }
         }
-
 
         /// <summary>
         /// 去除扩展名 多余的部分, 返回一个正常的 名称
@@ -302,13 +291,16 @@ namespace GetWebResources.Utils
             ResourcesUrlBackList.Clear();
             ResourcesUrlBackList.AddRange(ResourcesUrlList);
 
+            var index = 1;
+            var len = ResourcesUrlBackList.Count;
             foreach (var urlItem in ResourcesUrlBackList)
             {
-                var res = await SaveResourcesByUrl(urlItem);
-                if (res)
-                {
-                    GlobalUI.ShowTip("保存成功: " + urlItem);
-                }
+                var tip = $"({index} / {len} )开始下载:" + urlItem;
+                GlobalUI.ShowTip(tip);
+
+                await SaveResourcesByUrl(urlItem);
+
+                index++;
             }
 
             var savedFolderPath = Path.Combine(BasePath, ProjectName);
@@ -318,13 +310,13 @@ namespace GetWebResources.Utils
         }
 
         public static Action<int> OnResourcesListCountChanged;
+
         /// <summary>
         /// 向 ResourcesList 推送数据
         /// </summary>
         /// <param name="urlStr"></param>
         public static void PutUrlToResourcesList(string urlStr)
         {
-
             ResourcesUrlList.Add(urlStr);
             // 调用 委托
             OnResourcesListCountChanged?.Invoke(ResourcesUrlList.Count);
@@ -337,6 +329,5 @@ namespace GetWebResources.Utils
         {
             ResourcesUrlList.Clear();
         }
-
     }
 }

@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 using GetWebResources.Utils;
 
 using Serilog;
-using System.Windows.Threading;
 
 namespace GetWebResources
 {
@@ -18,7 +13,6 @@ namespace GetWebResources
     /// </summary>
     public partial class App : Application
     {
-
         protected override void OnStartup(StartupEventArgs e)
         {
             ConsoleUtils.Show();

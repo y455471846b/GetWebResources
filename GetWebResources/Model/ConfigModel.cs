@@ -14,6 +14,5 @@ namespace GetWebResources.Model
 
         [JsonProperty("ContainsHostList")]
         public List<string> ContainsHostList { get; set; }
-
     }
 }

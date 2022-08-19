@@ -1,39 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 using CefSharp;
-using CefSharp.DevTools.Network;
-using CefSharp.Handler;
 using CefSharp.Wpf;
 
 using GetWebResources.Handle;
-using GetWebResources.Model;
 using GetWebResources.Utils;
+
+using MaterialDesignThemes.Wpf;
 
 using Serilog;
 
 namespace GetWebResources
 {
-
     public static class GlobalUI
     {
         public static ChromiumWebBrowser Web { get; set; }
@@ -50,12 +33,12 @@ namespace GetWebResources
             });
         }
     }
+
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
-
 
             // 重写 浏览器请求处理程序
             Web.RequestHandler = new MyRequestHandle();
@@ -70,15 +53,30 @@ namespace GetWebResources
             GlobalUI.Web = Web;
             GlobalUI.LabelTip = LabelTip;
             GlobalUI.Dispatcher = Dispatcher;
+
+            Web.ConsoleMessage += Web_ConsoleMessage;
+
+            Web.LoadingStateChanged += Web_LoadingStateChanged;
         }
 
+        public SnackbarMessageQueue messageQueue { get; set; } = new SnackbarMessageQueue();
+
+        private void Web_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
+        {
+            var msg = e.IsLoading ? "网页正在加载..." : "加载完成";
+            GlobalUI.ShowTip(msg);
+        }
+
+        private void Web_ConsoleMessage(object sender, ConsoleMessageEventArgs e)
+        {
+            ConsoleUtils.WriteLine($"浏览器日志 :{e.Message}");
+        }
 
         private void InitDataSource()
         {
             SaveResourcesUtils.InitHistoryList();
             ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
         }
-
 
         private void InitEvent()
         {
@@ -104,7 +102,6 @@ namespace GetWebResources
 
         private void ComboBoxHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
             Web.Address = ComboBoxHistory.SelectedValue.ToString();
         }
 
@@ -115,7 +112,6 @@ namespace GetWebResources
 
         private void BtnLoad_Click(object sender, RoutedEventArgs e)
         {
-
             SaveResourcesUtils.ClearResourcesList();
             var url = TextBoxWebUrl.Text;
 
@@ -128,7 +124,6 @@ namespace GetWebResources
                 Web.Address = url;
                 SaveResourcesUtils.PushToHistoryList(url);
             }
-
         }
 
         private void BtnGetResources_Click(object sender, RoutedEventArgs e)
@@ -175,7 +170,6 @@ namespace GetWebResources
                     SaveResourcesUtils.OpenFolderPath(basePath);
                 }
             });
-
         }
 
         private void SetTip(string data)
@@ -205,7 +199,5 @@ namespace GetWebResources
         {
             SaveResourcesUtils.OpenConfigPath();
         }
-
-
     }
 }

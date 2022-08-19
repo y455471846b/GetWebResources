@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Serilog;
+﻿using Serilog;
 
 namespace GetWebResources.Utils
 {
     public class LogUtils
     {
-
         /// <summary>
         /// 初始化Log  (使用Log记录日志)
         /// </summary>
