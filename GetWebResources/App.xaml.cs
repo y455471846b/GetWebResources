@@ -15,10 +15,15 @@ namespace GetWebResources
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            ConsoleUtils.Show();
-            LogUtils.InitLog();
 
             base.OnStartup(e);
+
+            // 初始化 serilog
+            Log.Logger = new LoggerConfiguration()
+                 .MinimumLevel.Debug()
+                 .WriteTo.File("Logs/app-log.txt", rollingInterval: RollingInterval.Day)
+                 .WriteTo.Console()
+                 .CreateLogger();
 
             // 捕获 全局异常
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -29,7 +34,6 @@ namespace GetWebResources
         {
             var ex = e.Exception;
             Log.Error(ex, "App_DispatcherUnhandledException 发生异常:");
-            ConsoleUtils.WriteLine("CurrentDomain_UnhandledException 发生异常:" + ex);
             e.Handled = true;
         }
 
@@ -37,7 +41,6 @@ namespace GetWebResources
         {
             var ex = e.ExceptionObject as Exception;
             Log.Error(ex, "App 发生异常:");
-            ConsoleUtils.WriteLine("App 发生异常:" + ex);
         }
     }
 }

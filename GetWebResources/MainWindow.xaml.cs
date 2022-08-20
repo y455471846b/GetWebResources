@@ -5,83 +5,22 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
-using CefSharp;
-using CefSharp.Wpf;
-
-using GetWebResources.Handle;
 using GetWebResources.Utils;
 
-using MaterialDesignThemes.Wpf;
+using Microsoft.Web.WebView2.Core;
 
 using Serilog;
 
+// WebView2 官方中文文档
+// https://docs.microsoft.com/zh-cn/microsoft-edge/webview2/concepts/overview-features-apis?tabs=dotnetcsharp
+
 namespace GetWebResources
 {
-    public static class GlobalUI
-    {
-        public static ChromiumWebBrowser Web { get; set; }
-
-        public static Label LabelTip { get; set; }
-
-        public static Dispatcher Dispatcher { get; set; }
-
-        public static void ShowTip(string msg)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                LabelTip.Content = msg;
-            });
-        }
-    }
-
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
-
-            // 重写 浏览器请求处理程序
-            Web.RequestHandler = new MyRequestHandle();
-
-            LogUtils.InitLog();
-
-            // 显示console
-            ConsoleUtils.Show();
-            InitEvent();
-
-            InitDataSource();
-            GlobalUI.Web = Web;
-            GlobalUI.LabelTip = LabelTip;
-            GlobalUI.Dispatcher = Dispatcher;
-
-            Web.ConsoleMessage += Web_ConsoleMessage;
-
-            Web.LoadingStateChanged += Web_LoadingStateChanged;
-        }
-
-        public SnackbarMessageQueue messageQueue { get; set; } = new SnackbarMessageQueue();
-
-        private void Web_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
-        {
-            var msg = e.IsLoading ? "网页正在加载..." : "加载完成";
-            GlobalUI.ShowTip(msg);
-        }
-
-        private void Web_ConsoleMessage(object sender, ConsoleMessageEventArgs e)
-        {
-            ConsoleUtils.WriteLine($"浏览器日志 :{e.Message}");
-        }
-
-        private void InitDataSource()
-        {
-            SaveResourcesUtils.InitHistoryList();
-            ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
-        }
-
-        private void InitEvent()
-        {
-            // 地址改变事件
-            Web.AddressChanged += Web_AddressChanged;
 
             ComboBoxHistory.SelectionChanged += ComboBoxHistory_SelectionChanged;
 
@@ -98,16 +37,56 @@ namespace GetWebResources
             {
                 ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
             };
+
+            SaveResourcesUtils.InitHistoryList();
+            ComboBoxHistory.ItemsSource = SaveResourcesUtils.HistoryList;
+
+            Web.CoreWebView2InitializationCompleted += Web_CoreWebView2InitializationCompleted;
+            //Web.ConsoleMessage += Web_ConsoleMessage;
+
+            //Web.LoadingStateChanged += Web_LoadingStateChanged;
+
+        }              
+
+        /// <summary>
+        /// WebView2 core 初始化完成 (可以获取到 CoreWebView2 对象)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Web_CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
+        {
+            Web.CoreWebView2.SourceChanged += CoreWebView2_SourceChanged;
+
+            Web.CoreWebView2.WebResourceResponseReceived += CoreWebView2_WebResourceResponseReceived;
+            Web.CoreWebView2.DOMContentLoaded += CoreWebView2_DOMContentLoaded;          
+
         }
 
+        private void CoreWebView2_DOMContentLoaded(object sender, CoreWebView2DOMContentLoadedEventArgs e)
+        {
+            
+            Log.Information("dom 加载完毕");
+        }
+
+        /// <summary>
+        /// 监听资源的 请求与响应
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CoreWebView2_WebResourceResponseReceived(object sender, CoreWebView2WebResourceResponseReceivedEventArgs e)
+        {
+            Log.Information($"资源地址: {e.Request.Uri}");
+            SaveResourcesUtils.PutUrlToResourcesList(e.Request.Uri);
+        }
+
+        private void CoreWebView2_SourceChanged(object sender, CoreWebView2SourceChangedEventArgs e)
+        {
+            TextBoxWebUrl.Text = Web.Source.ToString();
+        }             
+              
         private void ComboBoxHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Web.Address = ComboBoxHistory.SelectedValue.ToString();
-        }
-
-        private void Web_AddressChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            TextBoxWebUrl.Text = Web.Address;
+            Web.CoreWebView2.Navigate(ComboBoxHistory.SelectedValue.ToString());
         }
 
         private void BtnLoad_Click(object sender, RoutedEventArgs e)
@@ -115,37 +94,24 @@ namespace GetWebResources
             SaveResourcesUtils.ClearResourcesList();
             var url = TextBoxWebUrl.Text;
 
-            if (Web.Address == url)
+            if (Web.Source.ToString() == url)
             {
                 Web.Reload();
             }
             else
             {
-                Web.Address = url;
+                Web.CoreWebView2.Navigate(url);
                 SaveResourcesUtils.PushToHistoryList(url);
             }
         }
 
         private void BtnGetResources_Click(object sender, RoutedEventArgs e)
         {
-            var title = Web?.Title ?? "";
             Task.Run(async () =>
             {
                 try
                 {
-                    MessageBox.Show("⏱️ 开始获取资源,请稍等...");
-                    SetTip("⏱️ 正在获取资源,请稍等..");
-
-                    if (string.IsNullOrEmpty(title))
-                    {
-                        title = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffffff");
-                    }
-                    else if (title.Length > 10)
-                    {
-                        title = title.Substring(0, 10);
-                    }
-
-                    SaveResourcesUtils.ProjectName = title;
+                    Log.Information("⏱️ 正在获取资源,请稍等..");
 
                     // 保存所有资源
                     var path = await SaveResourcesUtils.SaveAllResourcesAsync();
@@ -156,14 +122,13 @@ namespace GetWebResources
                         SaveResourcesUtils.OpenFolderPath(path);
                     }
 
-                    SetTip("✔️ 获取资源完成..");
-                    MessageBox.Show("✔️ 获取资源完成..");
+                    Log.Information("✔️ 获取资源完成..");
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "获取资源异常:");
-                    SetTip("发生异常,请到Logs目录中查看详细信息");
-                    ConsoleUtils.WriteLine("获取资源异常: " + ex);
+                    Log.Information("发生异常,请到Logs目录中查看详细信息");
+                    Log.Information("获取资源异常: " + ex);
 
                     //打开log目录
                     var basePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
@@ -172,17 +137,9 @@ namespace GetWebResources
             });
         }
 
-        private void SetTip(string data)
-        {
-            Dispatcher.Invoke(() =>
-               {
-                   LabelTip.Content = data;
-               });
-        }
-
         private void BtnCheckCore_Click(object sender, RoutedEventArgs e)
         {
-            Web.Address = "https://ie.icoa.cn/";
+            Web.CoreWebView2.Navigate("https://ie.icoa.cn/");
         }
 
         private void CheckBoxOpenHostFilter_Checked(object sender, RoutedEventArgs e)

@@ -24,7 +24,6 @@ namespace GetWebResources.Utils
 
         public static string BasePath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "out");
 
-        public static string ProjectName { get; set; } = string.Empty;
 
         public static bool OpenHostFilterState { get; set; } = false;
 
@@ -184,7 +183,7 @@ namespace GetWebResources.Utils
 
                 var baseFolderPath = Path.Combine(
                     BasePath,
-                    ProjectName,
+                    //ProjectName,
                     resourcesInfo.Host,
                     resourcesInfo.Ext.Replace(".", "") // 使用 扩展名 创建一个文件夹
                     );
@@ -215,7 +214,6 @@ namespace GetWebResources.Utils
                 {
                     var errorName = $"{ClassName}.{nameof(SaveResourcesByUrl)} WriteAllBytes 写入文件异常 ";
                     Log.Error(ex, errorName);
-                    ConsoleUtils.WriteLine(errorName + ex);
                 }
 
                 result = File.Exists(fullPath);
@@ -226,7 +224,6 @@ namespace GetWebResources.Utils
             {
                 var errorName = $"{ClassName}.{nameof(SaveResourcesByUrl)} 异常: ";
                 Log.Error(ex, errorName);
-                ConsoleUtils.WriteLine(errorName + ex);
 
                 return result;
             }
@@ -284,7 +281,7 @@ namespace GetWebResources.Utils
         /// <returns>本地存放的目录</returns>
         public static async Task<string> SaveAllResourcesAsync()
         {
-            Log.Information("开始获取资源: " + SaveResourcesUtils.ProjectName);
+            Log.Information("开始获取资源");
 
             InitConfig();
 
@@ -296,14 +293,14 @@ namespace GetWebResources.Utils
             foreach (var urlItem in ResourcesUrlBackList)
             {
                 var tip = $"({index} / {len} )开始下载:" + urlItem;
-                GlobalUI.ShowTip(tip);
+                Log.Information(tip);
 
                 await SaveResourcesByUrl(urlItem);
 
                 index++;
             }
 
-            var savedFolderPath = Path.Combine(BasePath, ProjectName);
+            var savedFolderPath = Path.Combine(BasePath);
             Log.Information("资源保存的路径:" + savedFolderPath);
 
             return savedFolderPath;
