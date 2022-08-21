@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 using Serilog;
 
-namespace GetWebResources.Utils
+namespace GetWebResources.Core.Utils
 {
     public class SaveResourcesUtils
     {

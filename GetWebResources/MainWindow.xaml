@@ -5,6 +5,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        mc:Ignorable="d"
+
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Normal"
         TextElement.FontSize="13"
@@ -12,41 +14,39 @@
         TextOptions.TextRenderingMode="Auto"
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
-
-        mc:Ignorable="d"
         Title="一键获取Web资源" Width="1290" Height="672">
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40"></RowDefinition>
             <RowDefinition Height="50"></RowDefinition>
             <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="1" BorderBrush="Red" BorderThickness="0,0,0,1" Background="White" Grid.ColumnSpan="2">
+        <Border Grid.Row="0" BorderBrush="Red" BorderThickness="0,0,0,1" Background="White" Grid.ColumnSpan="2">
             <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,5">
-                <CheckBox Margin="10,0,0,0" Name="CheckBoxOpenHostFilter" Content="打开Host筛选" VerticalAlignment="Center" Checked="CheckBoxOpenHostFilter_Checked" Unchecked="CheckBoxOpenHostFilter_Unchecked" />
-                <TextBox Margin="10,0,0,0"  Name="TextBoxWebUrl" Text="" Width="auto" MinWidth="150"  MaxWidth="400"  VerticalAlignment="Center" />
+                <CheckBox Margin="10,0,0,0" Name="CheckBoxOpenHostFilter" Content="打开Host筛选" VerticalAlignment="Center"
+                          IsChecked="{Binding OpenHostFilter}"
+                          />
+                <TextBox Margin="10,0,0,0"  Text="{Binding TextBoxWebUrl}" Width="auto" MinWidth="150" MaxWidth="400" VerticalAlignment="Center" />
 
                 <Button
-                       Click="BtnLoad_Click"
-                        Style="{StaticResource MaterialDesignRaisedButton}"
-                        materialDesign:ButtonProgressAssist.Value="-1"
-                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
-                        materialDesign:ButtonProgressAssist.IsIndeterminate="True"
-                        Content="加载 / 刷新"
-                        Margin="2,0"
-                        IsEnabled="{Binding DataContext.ControlsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" />
+                    Command="{Binding LoadUrlCommand}"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    materialDesign:ButtonProgressAssist.Value="-1"
+                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
+                    materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+                    Content="加载 / 刷新"
+                    Margin="2,0" />
 
-                <Button Margin="10,0,0,0" Name="BtnGetResources" Content="获取资源"  Click="BtnGetResources_Click" />
-                <Label Margin="10,0,0,0"   Content="资源数: " VerticalAlignment="Center" ></Label>
-                <Label Margin="0,0,0,0"  Name="LableResourcesCount" Content="0" VerticalAlignment="Center" />
-                <Button Margin="10,0,0,0" Name="BtnOpenConfig" Content="打开设置目录"  Click="BtnOpenConfig_Click" />
-                <Button Margin="10,0,0,0" Name="BtnCheckCore" Content="浏览器内核检测"  Click="BtnCheckCore_Click" />
+                <Button Margin="10,0,0,0"  Content="获取资源" Command="{Binding  GetResourcesCommand}" />
+                <Label Margin="10,0,0,0" Content="资源数: " VerticalAlignment="Center"></Label>
+                <Label Margin="0,0,0,0" Content="{Binding FileCount}" VerticalAlignment="Center" />
+                <Button Margin="10,0,0,0"  Content="打开设置目录" Command="{Binding OpenConfigCommand }" />
+                <Button Margin="10,0,0,0"  Content="浏览器内核检测" Command="{Binding CheckCoreCommand}" />
                 <ComboBox Margin="10,0,0,0" Name="ComboBoxHistory" Width="200" />
             </StackPanel>
         </Border>
 
-        <wv2:WebView2  Grid.Row="2" x:Name="Web" Margin="0,5,0,5" Source="about:blank" Grid.ColumnSpan="2" />
+        <wv2:WebView2 Grid.Row="1" x:Name="Web" Margin="0,5,0,5" Source="{Binding WebView2Source}"   Grid.ColumnSpan="2" />
     </Grid>
 </Window>
