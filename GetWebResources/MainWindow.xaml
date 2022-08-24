@@ -7,13 +7,10 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
 
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Normal"
         TextElement.FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
-        Background="{DynamicResource MaterialDesignPaper}"
-        FontFamily="{DynamicResource MaterialDesignFont}"
         Title="一键获取Web资源" Width="1290" Height="672">
 
     <Grid>
@@ -30,11 +27,7 @@
                 <TextBox Margin="10,0,0,0"  Text="{Binding TextBoxWebUrl}" Width="auto" MinWidth="150" MaxWidth="400" VerticalAlignment="Center" />
 
                 <Button
-                    Command="{Binding LoadUrlCommand}"
-                    Style="{StaticResource MaterialDesignRaisedButton}"
-                    materialDesign:ButtonProgressAssist.Value="-1"
-                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
-                    materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+                    Command="{Binding LoadUrlCommand}"                    
                     Content="加载 / 刷新"
                     Margin="2,0" />
 
